@@ -1,3 +1,5 @@
+[README in Japanese.](https://github.com/UGOKU-Lab/FlexConsole_for_Bluetooth_Serial/blob/main/README_JA.md)
+
 # FlexConsole for Bluetooth Serial 
 
 An android app that allows you to control and monitor your devices using
