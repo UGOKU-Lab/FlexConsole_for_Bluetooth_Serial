@@ -1,3 +1,5 @@
+[README in Japanese.](https://github.com/UGOKU-Lab/FlexConsole_for_Bluetooth_Serial/blob/main/README_JA.md)
+
 # FlexConsole for Bluetooth Serial 
 
 An android app that allows you to control and monitor your devices using
@@ -12,9 +14,9 @@ Since there are no reserved channels, you can define any correspondence between
 channels and requests.
 
 The second byte is `value`: the payload.
-`value` is single byte data, so it must be in the range 0-255.
-If you want to use floating point values, you need to convert the values on your
-device.
+`value` is single byte data and it must be in the range 0-255.
+If you want to use floating point values or signed values, you need to convert
+the values on your device.
 
 The third byte is `checksum`.
 The value must equal to XOR of `channel` and `value`.
