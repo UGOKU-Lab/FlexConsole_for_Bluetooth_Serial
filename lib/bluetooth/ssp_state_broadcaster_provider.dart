@@ -28,7 +28,7 @@ final sspStateBroadcasterProvider = Provider<SspStateBroadcaster>((ref) {
       final outputStreamController = StreamController<Uint8List>();
 
       outputStreamController.stream.listen((event) {
-        if (device?.isConnected ?? false) {
+        if (connection?.isConnected ?? false) {
           connection?.output.add(event);
         }
       });
