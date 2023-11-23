@@ -30,6 +30,9 @@ class SppStateBroadcaster implements MultiChannelBroadcaster {
   final Stream<Uint8List>? inputStream;
   final Sink<Uint8List>? outputSink;
 
+  late Timer _timer;
+  final _sendDataMap = <SppStateChannel, int>{};
+
   /// The stream that translate the binary data from the [inputStream] and
   /// [outputSink] to the [_ValueOnChannel], then broadcasts to the branches.
   late final _root = StreamController<_ValueOnChannel>.broadcast();
@@ -42,6 +45,7 @@ class SppStateBroadcaster implements MultiChannelBroadcaster {
 
   /// Creates a broadcaster using [inputStream] and [outputSink].
   SppStateBroadcaster({this.inputStream, this.outputSink}) {
+    // Add a listener for the SPP input stream.
     inputStream?.listen((data) {
       _buffer.addAll(data);
 
@@ -58,6 +62,27 @@ class SppStateBroadcaster implements MultiChannelBroadcaster {
         }
       }
     });
+
+    // Set the timer for the first call.
+    _timer = Timer(const Duration(milliseconds: 100), _periodicWrite);
+  }
+
+  void _periodicWrite() {
+    for (final entry in _sendDataMap.entries) {
+      final channel = entry.key.value;
+      final value = entry.value;
+
+      // Send to the device.
+      outputSink?.add(_ValueOnChannel(channel, value).toUint8List());
+    }
+
+    _sendDataMap.clear();
+
+    _timer = Timer(const Duration(milliseconds: 100), _periodicWrite);
+  }
+
+  void dispose() {
+    _timer.cancel();
   }
 
   /// Gets the stream on the [channel].
@@ -95,8 +120,8 @@ class SppStateBroadcaster implements MultiChannelBroadcaster {
         // Echo back to downward.
         downward.sink.add(event);
 
-        // Send to the device.
-        outputSink?.add(_ValueOnChannel(channel.value, value).toUint8List());
+        // Store the data to the map.
+        _sendDataMap[channel] = value;
       });
 
       _branches[channel] = (upward: upward, downward: downward);

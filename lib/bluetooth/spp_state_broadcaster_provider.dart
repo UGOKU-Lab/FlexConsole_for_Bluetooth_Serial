@@ -6,12 +6,16 @@ import 'package:flex_console_for_bluetooth_serial/bluetooth/connection_provider.
 import 'package:flex_console_for_bluetooth_serial/bluetooth/spp_state_broadcaster.dart';
 import 'package:flex_console_for_bluetooth_serial/bluetooth/target_device_provider.dart';
 
+SppStateBroadcaster? _broadcaster;
+
 /// Provides a broadcaster.
 final sspStateBroadcasterProvider = Provider<SppStateBroadcaster>((ref) {
   final connection = ref.watch(connectionProvider);
   final device = ref.watch(connectionTargetDeviceProvider);
 
-  return connection.when(
+  _broadcaster?.dispose();
+
+  _broadcaster = connection.when(
     loading: () => SppStateBroadcaster(),
     data: (connection) {
       final inputStream = connection?.input?.asBroadcastStream();
@@ -41,4 +45,6 @@ final sspStateBroadcasterProvider = Provider<SppStateBroadcaster>((ref) {
     },
     error: (error, trace) => SppStateBroadcaster(),
   );
+
+  return _broadcaster!;
 });
