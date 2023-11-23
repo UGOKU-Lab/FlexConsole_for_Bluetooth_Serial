@@ -3,10 +3,10 @@ import 'dart:typed_data';
 
 import 'package:flex_console_for_bluetooth_serial/util/broadcaster/multi_channel_broadcaster.dart';
 
-class SspStateChannel implements BroadcastChannel {
+class SppStateChannel implements BroadcastChannel {
   int value;
 
-  SspStateChannel(this.value);
+  SppStateChannel(this.value);
 
   @override
   String get identifier => value.toString();
@@ -22,11 +22,11 @@ class SspStateChannel implements BroadcastChannel {
 
   @override
   bool operator ==(Object other) {
-    return other is SspStateChannel && other.hashCode == hashCode;
+    return other is SppStateChannel && other.identifier == identifier;
   }
 }
 
-class SspStateBroadcaster implements MultiChannelBroadcaster {
+class SppStateBroadcaster implements MultiChannelBroadcaster {
   final Stream<Uint8List>? inputStream;
   final Sink<Uint8List>? outputSink;
 
@@ -36,12 +36,12 @@ class SspStateBroadcaster implements MultiChannelBroadcaster {
 
   /// The branches of root streams.
   late final _branches =
-      <SspStateChannel, _TwoWayStreamController<double, double>>{};
+      <SppStateChannel, _TwoWayStreamController<double, double>>{};
 
   final _buffer = <int>[];
 
   /// Creates a broadcaster using [inputStream] and [outputSink].
-  SspStateBroadcaster({this.inputStream, this.outputSink}) {
+  SppStateBroadcaster({this.inputStream, this.outputSink}) {
     inputStream?.listen((data) {
       _buffer.addAll(data);
 
@@ -63,7 +63,7 @@ class SspStateBroadcaster implements MultiChannelBroadcaster {
   /// Gets the stream on the [channel].
   @override
   Stream<double>? streamOn(BroadcastChannel channel) {
-    if (channel is! SspStateChannel) return null;
+    if (channel is! SppStateChannel) return null;
 
     return _getBranch(channel)?.downward.stream;
   }
@@ -71,12 +71,12 @@ class SspStateBroadcaster implements MultiChannelBroadcaster {
   /// Gets the sink on the [channel].
   @override
   Sink<double>? sinkOn(BroadcastChannel channel) {
-    if (channel is! SspStateChannel) return null;
+    if (channel is! SppStateChannel) return null;
 
     return _getBranch(channel)?.upward.sink;
   }
 
-  _TwoWayStreamController<double, double>? _getBranch(SspStateChannel channel) {
+  _TwoWayStreamController<double, double>? _getBranch(SppStateChannel channel) {
     if (!_branches.containsKey(channel)) {
       final upward = StreamController<double>();
       final downward = StreamController<double>.broadcast();

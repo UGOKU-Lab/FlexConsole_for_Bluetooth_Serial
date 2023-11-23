@@ -3,16 +3,16 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flex_console_for_bluetooth_serial/bluetooth/connection_provider.dart';
-import 'package:flex_console_for_bluetooth_serial/bluetooth/ssp_state_broadcaster.dart';
+import 'package:flex_console_for_bluetooth_serial/bluetooth/spp_state_broadcaster.dart';
 import 'package:flex_console_for_bluetooth_serial/bluetooth/target_device_provider.dart';
 
 /// Provides a broadcaster.
-final sspStateBroadcasterProvider = Provider<SspStateBroadcaster>((ref) {
+final sspStateBroadcasterProvider = Provider<SppStateBroadcaster>((ref) {
   final connection = ref.watch(connectionProvider);
   final device = ref.watch(connectionTargetDeviceProvider);
 
   return connection.when(
-    loading: () => SspStateBroadcaster(),
+    loading: () => SppStateBroadcaster(),
     data: (connection) {
       final inputStream = connection?.input?.asBroadcastStream();
 
@@ -34,11 +34,11 @@ final sspStateBroadcasterProvider = Provider<SspStateBroadcaster>((ref) {
       });
 
       // Combine input and output streams.
-      return SspStateBroadcaster(
+      return SppStateBroadcaster(
         inputStream: inputStream,
         outputSink: outputStreamController.sink,
       );
     },
-    error: (error, trace) => SspStateBroadcaster(),
+    error: (error, trace) => SppStateBroadcaster(),
   );
 });
