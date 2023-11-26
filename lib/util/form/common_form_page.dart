@@ -43,7 +43,8 @@ class CommonFormPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
+    return PopScope(
+      canPop: false,
       child: Scaffold(
         appBar: AppBar(
           title: Text(title),
@@ -68,7 +69,9 @@ class CommonFormPage extends StatelessWidget {
           ),
         ),
       ),
-      onWillPop: () {
+      onPopInvoked: (final didPop) async {
+        if (didPop) return;
+
         final shouldPop = Completer<bool>();
 
         showDialog(
@@ -95,14 +98,11 @@ class CommonFormPage extends StatelessWidget {
           ),
         );
 
-        return shouldPop.future.then((shouldPop) {
+        await shouldPop.future.then((final shouldPop) {
           // Return the result before pop this form.
           if (shouldPop) {
-            Navigator.of(context).pop(false);
+            Navigator.of(context).pop();
           }
-
-          // Always false because of that required pop is done above.
-          return Future.value(false);
         });
       },
     );

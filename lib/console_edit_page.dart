@@ -56,7 +56,8 @@ class _ConsoleEditPageState extends State<ConsoleEditPage> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
+    return PopScope(
+      canPop: false,
       child: Scaffold(
         appBar: AppBar(
           title: IntrinsicWidth(
@@ -150,7 +151,9 @@ class _ConsoleEditPageState extends State<ConsoleEditPage> {
           ),
         ),
       ),
-      onWillPop: () async {
+      onPopInvoked: (final didPop) async {
+        if (didPop) return;
+
         // Cancellation action.
         final shouldPop = Completer<bool>();
 
@@ -179,7 +182,12 @@ class _ConsoleEditPageState extends State<ConsoleEditPage> {
           ),
         );
 
-        return shouldPop.future;
+        // Pop this page when "Yes" is pressed.
+        await shouldPop.future.then((final shouldPop) {
+          if (shouldPop) {
+            Navigator.of(context).pop();
+          }
+        });
       },
     );
   }

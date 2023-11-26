@@ -100,7 +100,8 @@ class _ConsoleListPageState extends State<ConsoleListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
+    return PopScope(
+      canPop: true,
       child: Scaffold(
         appBar: AppBar(
           title: const Text("Consoles"),
@@ -196,14 +197,12 @@ class _ConsoleListPageState extends State<ConsoleListPage> {
                 ),
               ),
       ),
-      onWillPop: () async {
+      onPopInvoked: (final didPop) async {
         // Save current parameters.
         await SharedPreferences.getInstance().then((pref) {
           pref.setStringList("consoles",
               _saves.map((save) => jsonEncode(save.toJson())).toList());
         });
-
-        return true;
       },
     );
   }
