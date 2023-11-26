@@ -41,11 +41,9 @@ class StartupWidget extends StatelessWidget {
                   'body':
                       'Welcome to the $version of the FlexConsole for Bluetooth'
                           ' Serial.\n'
-                          'This offers the following key features:\n'
+                          'This offers the following changes:\n'
                           '\n'
-                          '- console creation;\n'
-                          '- connection to your Bluetooth devices;\n'
-                          '- control of the devices using Serial Port Profile.\n'
+                          '- limited output interval.\n'
                           '\n'
                           'For more information, search on GitHub.'
                 },
