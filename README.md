@@ -1,3 +1,5 @@
+[README in English](https://github.com/UGOKU-Lab/FlexConsole_for_Bluetooth_Serial/blob/main/README_EN.md)
+
 # FlexConsole for Bluetooth Serial 
 
 このアプリは、Bluetooth ClassicのSSPプロファイルを用いてAndroidスマートフォンと
