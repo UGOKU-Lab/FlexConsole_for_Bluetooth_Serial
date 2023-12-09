@@ -3,7 +3,7 @@
 # FlexConsole for Bluetooth Serial 
 
 このアプリは、Bluetooth ClassicのSSPプロファイルを用いてAndroidスマートフォンと
-デバイスを接続し、デバイスの制御・監視を可能とします。
+デバイスを接続し、デバイスの制御・監視をすることができます。
 
 ## データ交換
 
