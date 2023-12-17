@@ -5,8 +5,16 @@
 このアプリは、Bluetooth ClassicのSSPプロファイルを用いてAndroidスマートフォンと
 デバイスを接続し、デバイスの制御・監視をすることができます。
 
-## データ交換
+## 使用方法
+### インストール方法
+[releaseページ](https://github.com/UGOKU-Lab/FlexConsole_for_Bluetooth_Serial/releases/tag/v0.2.0-alpha)からAndroidで実行可能なapkファイルをダウンロードできます。
 
+### マイコン側プログラム
+ESP32で実行可能なArduinoのサンプルコードを公開しています。  
+[ESP32_Arduino_for_FlexConsole](https://github.com/UGOKU-Lab/ESP32_Arduino_for_FlexConsole)
+
+
+## データ交換
 このアプリは、3バイトのデータを単位として送受信します。
 
 1番目のバイトデータは`チャンネル`です。
