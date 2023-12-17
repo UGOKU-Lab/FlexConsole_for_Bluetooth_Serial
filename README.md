@@ -30,8 +30,6 @@
 ## ライセンス
 Copyright (c) 2023 UGOKU Lab
 
-使用ライブラリ及びそのソースコードのライセンスはアプリ内ライセンスページの記載に準じます。
-
-その他のソースコード及びアプリ本体はMIT License ([LICENSE](https://github.com/UGOKU-Lab/FlexConsole_for_Bluetooth_Serial/blob/main/LICENSE)) に基づき公開されています。
-
+使用ライブラリ及びそのソースコードのライセンスはアプリ内ライセンスページの記載に準じます。  
+その他のソースコード及びアプリ本体はMIT License ([LICENSE](https://github.com/UGOKU-Lab/FlexConsole_for_Bluetooth_Serial/blob/main/LICENSE)) に基づき公開されています。  
 MIT Licenseに基づき、本アプリ及びソースコードの使用によって生じた損害等の一切の責任を負いかねます。ご了承ください。
