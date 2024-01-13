@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -17,8 +18,8 @@ class DeviceConnectionPage extends StatefulWidget {
 }
 
 class _DeviceConnectionPageState extends State<DeviceConnectionPage> {
-  /// The process to get the list of the bonded devices.
-  late final bondedDevices = !kIsWeb && Platform.isAndroid
+  /// Checks the permissions and start discovering bluetooth devices.
+  late final _startupTask = !kIsWeb && Platform.isAndroid
       ? Future(() async {
           // Try to get the permission for the bluetooth connection.
           final permissions = await [
@@ -29,22 +30,55 @@ class _DeviceConnectionPageState extends State<DeviceConnectionPage> {
           if (!permissions.values.every((permission) => permission.isGranted)) {
             throw Exception("Required permissions are not granted.");
           }
-
-          // Get the list.
-          return FlutterBluetoothSerial.instance.getBondedDevices();
-        })
+        }).then((_) => _startDiscovery())
       : Future.error(Exception("This platform is not supported."));
+
+  /// The devices discovered.
+  final _discoveredDevices = <BluetoothDevice>{};
+
+  /// The subscription for the stream of the discovering results.
+  StreamSubscription? _discoverySubscription;
+
+  void _startDiscovery() {
+    _discoverySubscription?.cancel();
+
+    setState(() {
+      _discoveredDevices.clear();
+
+      _discoverySubscription =
+          FlutterBluetoothSerial.instance.startDiscovery().listen(
+        (result) {
+          setState(() => _discoveredDevices.add(result.device));
+        },
+        onDone: () => setState(() => _discoverySubscription = null),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _discoverySubscription?.cancel();
+    FlutterBluetoothSerial.instance.cancelDiscovery();
+
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        title: const Text('Bonded Devices'),
+        title: const Text('Peripheral Devices'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: _discoverySubscription == null ? _startDiscovery : null,
+            icon: const Icon(Icons.replay),
+          )
+        ],
       ),
       body: FutureBuilder(
-        future: bondedDevices,
+        future: _startupTask,
         builder: (context, snapshot) {
           // Handle error.
           if (snapshot.hasError) {
@@ -54,59 +88,58 @@ class _DeviceConnectionPageState extends State<DeviceConnectionPage> {
                 children: [
                   Icon(Icons.error, color: Theme.of(context).colorScheme.error),
                   const Text(""),
-                  const Text("Failed to get the bonded devices.")
+                  const Text("Failed to discover devices.")
                 ],
               ),
             );
           }
 
           // List the bonded devices.
-          if (snapshot.hasData) {
-            if (snapshot.connectionState == ConnectionState.done) {
-              return Consumer(
-                builder: (context, ref, _) {
-                  // The notifier of the target device for the request.
-                  final targetDeviceNotifier =
-                      ref.watch(targetDeviceProvider.notifier);
+          if (snapshot.connectionState == ConnectionState.done) {
+            return Consumer(
+              builder: (context, ref, _) {
+                // The notifier of the target device for the request.
+                final targetDeviceNotifier =
+                    ref.watch(targetDeviceProvider.notifier);
 
-                  // The actual target device.
-                  final currentTargetDevice =
-                      ref.watch(connectionTargetDeviceProvider);
+                // The actual target device.
+                final currentTargetDevice =
+                    ref.watch(connectionTargetDeviceProvider);
 
-                  // The status of the connection.
-                  final connectionStatus = ref.watch(connectionProvider).when(
-                      data: (data) => 'established',
-                      loading: () => 'negotiating',
-                      error: (error, trace) => 'error');
+                // The status of the connection.
+                final connectionStatus = ref.watch(connectionProvider).when(
+                    data: (data) => 'established',
+                    loading: () => 'negotiating',
+                    error: (error, trace) => 'error');
 
-                  return StatefulBuilder(
-                    builder: (context, setState) => ListView.builder(
-                      itemCount: snapshot.data!.length,
-                      itemBuilder: (context, index) {
-                        final BluetoothDevice device = snapshot.data![index];
+                // The list of the discovered devices.
+                final deviceList = _discoveredDevices.toList();
 
-                        return ListTile(
-                          title: Text(device.name ?? "-"),
-                          subtitle: Text(device.address),
-                          enabled: connectionStatus != 'negotiating',
-                          trailing: currentTargetDevice == device
-                              ? connectionStatus == 'established'
-                                  ? const Icon(Icons.bluetooth_connected)
-                                  : connectionStatus == 'negotiating'
-                                      ? const CircularProgressIndicator()
-                                      : const Icon(Icons.error)
-                              : null,
-                          onTap: () {
-                            // Request the connection to the device.
-                            targetDeviceNotifier.state = device;
-                          },
-                        );
+                return ListView.builder(
+                  itemCount: deviceList.length,
+                  itemBuilder: (context, index) {
+                    final BluetoothDevice device = deviceList[index];
+
+                    return ListTile(
+                      title: Text(device.name ?? "-"),
+                      subtitle: Text(device.address),
+                      enabled: connectionStatus != 'negotiating',
+                      trailing: currentTargetDevice == device
+                          ? connectionStatus == 'established'
+                              ? const Icon(Icons.bluetooth_connected)
+                              : connectionStatus == 'negotiating'
+                                  ? const CircularProgressIndicator()
+                                  : const Icon(Icons.error)
+                          : null,
+                      onTap: () {
+                        // Request the connection to the device.
+                        targetDeviceNotifier.state = device;
                       },
-                    ),
-                  );
-                },
-              );
-            }
+                    );
+                  },
+                );
+              },
+            );
           }
 
           // Show the indicator.
