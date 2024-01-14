@@ -101,7 +101,7 @@ class CommonFormPage extends StatelessWidget {
         await shouldPop.future.then((final shouldPop) {
           // Return the result before pop this form.
           if (shouldPop) {
-            Navigator.of(context).pop();
+            Navigator.of(context).pop(false);
           }
         });
       },
