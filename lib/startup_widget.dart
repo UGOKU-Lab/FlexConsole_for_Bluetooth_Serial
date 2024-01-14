@@ -51,24 +51,29 @@ class StartupWidget extends StatelessWidget {
             ],
           ),
         ),
-        ConsoleSaveObject(
-          'Sample: Simple Controller',
-          ConsolePanelParameter(
-            rows: 2,
-            columns: 2,
-            cells: [
-              ConsolePanelCellParameter(
-                  row: 0, column: 0, creator: 'Slider', property: {}),
-              ConsolePanelCellParameter(
-                  row: 0, column: 1, creator: 'Toggle Switch', property: {}),
-              ConsolePanelCellParameter(
-                  row: 1, column: 0, creator: 'Joystick', property: {}),
-              ConsolePanelCellParameter(
-                  row: 1, column: 1, creator: 'Joystick', property: {}),
-            ],
-          ),
-        ),
       ];
+
+      if (savedVersion == null) {
+        newlyCreatedWidgets.addAll([
+          ConsoleSaveObject(
+            'Sample: Simple Controller',
+            ConsolePanelParameter(
+              rows: 2,
+              columns: 2,
+              cells: [
+                ConsolePanelCellParameter(
+                    row: 0, column: 0, creator: 'Slider', property: {}),
+                ConsolePanelCellParameter(
+                    row: 0, column: 1, creator: 'Toggle Switch', property: {}),
+                ConsolePanelCellParameter(
+                    row: 1, column: 0, creator: 'Joystick', property: {}),
+                ConsolePanelCellParameter(
+                    row: 1, column: 1, creator: 'Joystick', property: {}),
+              ],
+            ),
+          ),
+        ]);
+      }
 
       for (final newConsole in newlyCreatedWidgets) {
         while (savedConsoles.any((c) => c.title == newConsole.title)) {
