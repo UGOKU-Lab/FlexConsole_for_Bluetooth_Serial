@@ -1,9 +1,10 @@
 [README in English](https://github.com/UGOKU-Lab/FlexConsole_for_Bluetooth_Serial/blob/main/README_EN.md)
 
 # FlexConsole for Bluetooth Serial 
-
 AndroidスマートフォンとBluetoothデバイスを接続し、デバイスのアナログスティック等によるモータの操作やセンサ値の表示などのモニタリングを行うことができます。
 Bluetooth ClassicのSPPプロファイルを使用しています。
+
+<img src="https://github.com/UGOKU-Lab/FlexConsole_for_Bluetooth_Serial/assets/27545627/221b82e0-b112-43b0-86f4-3ec827887da3" width="800px">
 
 ## 使用方法
 ### インストール方法
