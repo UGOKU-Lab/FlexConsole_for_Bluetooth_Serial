@@ -9,7 +9,7 @@ import 'package:flex_console_for_bluetooth_serial/bluetooth/target_device_provid
 SppStateBroadcaster? _broadcaster;
 
 /// Provides a broadcaster.
-final sspStateBroadcasterProvider = Provider<SppStateBroadcaster>((ref) {
+final sppStateBroadcasterProvider = Provider<SppStateBroadcaster>((ref) {
   final connection = ref.watch(connectionProvider);
   final device = ref.watch(connectionTargetDeviceProvider);
 
