@@ -16,7 +16,6 @@ final consoleValueMonitorWidgetCreator = TypedConsoleWidgetCreator(
     builder: (context, ref, _) => ConsoleValueMonitorWidget(
       property: property,
       broadcaster: ref.watch(broadcasterProvider),
-      availableChannels: ref.watch(availableChannelProvider).toList(),
     ),
   ),
   previewBuilder: (context, property) => ConsoleValueMonitorWidget(

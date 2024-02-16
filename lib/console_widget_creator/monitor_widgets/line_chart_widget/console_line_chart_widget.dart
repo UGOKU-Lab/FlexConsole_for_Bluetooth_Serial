@@ -15,9 +15,6 @@ class ConsoleLineChartWidget extends StatefulWidget {
   /// The target broadcaster.
   final MultiChannelBroadcaster? broadcaster;
 
-  /// The available channels on the broadcaster.
-  final List<BroadcastChannel>? availableChannels;
-
   /// The initial values to display on preview and sample.
   final List<double>? initialValues;
 
@@ -29,7 +26,6 @@ class ConsoleLineChartWidget extends StatefulWidget {
     super.key,
     required this.property,
     this.broadcaster,
-    this.availableChannels,
     this.initialValues,
     this.start = true,
   });
@@ -48,9 +44,6 @@ class _ConsoleLineChartWidgetState extends State<ConsoleLineChartWidget> {
   /// Whether the display value should not update.
   bool _pausing = false;
 
-  /// The target broadcasting channel.
-  BroadcastChannel? _channel;
-
   /// The subscription for the targe channel.
   StreamSubscription? _subscription;
 
@@ -58,29 +51,28 @@ class _ConsoleLineChartWidgetState extends State<ConsoleLineChartWidget> {
   Timer? _samplingTimer;
 
   /// Initialize members.
-  void _initMember() {
+  void _initState() {
     // Initialize values.
     _values.clear();
     _values.addAll(List.of(
         widget.initialValues ?? List.filled(widget.property.samples, 0)));
-
-    // Initialize the channel to listen.
-    _channel = widget.availableChannels
-        ?.where((chan) => chan.identifier == widget.property.channel)
-        .firstOrNull;
   }
 
   /// Updates the subscription.
-  void _initSubscription() {
+  void _initBroadcastListening() {
     // Cancel the subscription anyway.
     _subscription?.cancel();
+    _subscription = null;
+
+    if (widget.property.channel == null) {
+      return;
+    }
 
     // Subscribe if required.
-    if (_channel != null) {
-      _subscription = widget.broadcaster?.streamOn(_channel!)?.listen((event) {
-        _currentValue = event;
-      });
-    }
+    _subscription =
+        widget.broadcaster?.streamOn(widget.property.channel!)?.listen((event) {
+      _currentValue = event;
+    });
   }
 
   /// Updates the timer.
@@ -89,22 +81,24 @@ class _ConsoleLineChartWidgetState extends State<ConsoleLineChartWidget> {
     _samplingTimer?.cancel();
 
     // Start periodic timer to sample the value.
-    if (widget.start) {
-      assert(widget.property.minValue != widget.property.maxValue);
-
-      _samplingTimer = Timer.periodic(
-          Duration(milliseconds: widget.property.period), (timer) {
-        // Pop the oldest value and append the current value.
-        _values.removeAt(0);
-        _values.add((_currentValue - widget.property.minValue) /
-            (widget.property.maxValue - widget.property.minValue));
-
-        // Update the display.
-        if (mounted && !_pausing) {
-          setState(() {});
-        }
-      });
+    if (!widget.start) {
+      return;
     }
+
+    assert(widget.property.minValue != widget.property.maxValue);
+
+    _samplingTimer =
+        Timer.periodic(Duration(milliseconds: widget.property.period), (timer) {
+      // Pop the oldest value and append the current value.
+      _values.removeAt(0);
+      _values.add((_currentValue - widget.property.minValue) /
+          (widget.property.maxValue - widget.property.minValue));
+
+      // Update the display.
+      if (!_pausing) {
+        setState(() {});
+      }
+    });
   }
 
   /// Sets the state [_pausing] to [pausing]
@@ -119,10 +113,10 @@ class _ConsoleLineChartWidgetState extends State<ConsoleLineChartWidget> {
   @override
   void initState() {
     // Initialize the members.
-    _initMember();
+    _initState();
 
     // Manage the lister for the broadcasting.
-    _initSubscription();
+    _initBroadcastListening();
 
     // Setup the timer to update view.
     _initTimer();
@@ -137,19 +131,27 @@ class _ConsoleLineChartWidgetState extends State<ConsoleLineChartWidget> {
 
     // Initialize members.
     if (widget.property != oldWidget.property) {
-      _initMember();
+      _initState();
     }
 
     // Manage the lister for the broadcasting.
     if (widget.broadcaster != oldWidget.broadcaster ||
         widget.property.channel != oldWidget.property.channel) {
-      _initSubscription();
+      _initBroadcastListening();
     }
 
     // Start the timer after all of other parameters have been updated.
     _initTimer();
 
     super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    _samplingTimer?.cancel();
+
+    super.dispose();
   }
 
   @override

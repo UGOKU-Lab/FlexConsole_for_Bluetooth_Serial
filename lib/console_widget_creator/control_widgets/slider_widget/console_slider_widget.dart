@@ -9,15 +9,13 @@ import 'package:flex_console_for_bluetooth_serial/util/widget/handle_widget.dart
 import 'package:flex_console_for_bluetooth_serial/util/broadcaster/multi_channel_broadcaster.dart';
 
 class ConsoleSliderWidget extends StatefulWidget {
-  final ConsoleSliderWidgetProperty? property;
+  final ConsoleSliderWidgetProperty property;
   final MultiChannelBroadcaster? broadcaster;
-  final List<BroadcastChannel>? availableChannels;
 
   const ConsoleSliderWidget({
     super.key,
-    this.property,
+    required this.property,
     this.broadcaster,
-    this.availableChannels,
   });
 
   @override
@@ -25,31 +23,38 @@ class ConsoleSliderWidget extends StatefulWidget {
 }
 
 class _ConsoleSliderWidgetState extends State<ConsoleSliderWidget> {
-  late ConsoleSliderWidgetProperty _prop;
   late double _rateOffset;
   double _rateDelta = 0;
   bool _activate = false;
 
   double? _prevValue;
-  BroadcastChannel? _channel;
   StreamSubscription? _subscription;
 
   double get _rate => _rateOffset + _rateDelta;
 
   /// Sets the delta value and adds the value to the sink.
-  void _setRateDelta(double rateDelta) {
+  void _setRateDelta(double rateDelta, {bool broadcast = true}) {
     setState(() {
       _rateDelta = rateDelta.clamp(-_rateOffset, 1 - _rateOffset);
     });
 
-    final value = ((_prop.maxValue - _prop.minValue) * _rate + _prop.minValue)
-        .floorToDouble();
+    final valueWidth = widget.property.valueWidth;
+    final minValue = widget.property.minValue;
+    final value = (valueWidth * _rate + minValue).floorToDouble();
 
-    if (_channel != null && _prevValue != value) {
-      widget.broadcaster?.sinkOn(_channel!)?.add(value);
+    if (broadcast && widget.property.channel != null && _prevValue != value) {
+      widget.broadcaster?.sinkOn(widget.property.channel!)?.add(value);
     }
 
     _prevValue = value;
+  }
+
+  /// Sets the offset value.
+  void _setRateOffset(double value) {
+    final valueWidth = widget.property.valueWidth;
+    final offsetValue = value - widget.property.minValue;
+
+    _rateOffset = (offsetValue / valueWidth).clamp(0, 1);
   }
 
   /// Adds the delta to the value and sets the delta to zero.
@@ -58,36 +63,41 @@ class _ConsoleSliderWidgetState extends State<ConsoleSliderWidget> {
     _rateDelta = 0;
   }
 
+  void _initState() {
+    final latestValue = widget.property.channel != null
+        ? widget.broadcaster?.read(widget.property.channel!)
+        : null;
+
+    _setRateOffset(latestValue ?? widget.property.initialValue);
+    _setRateDelta(0, broadcast: latestValue == null);
+  }
+
+  void _initBroadcastListening() {
+    _subscription?.cancel();
+    _subscription = null;
+
+    if (widget.property.channel == null) {
+      return;
+    }
+
+    _subscription =
+        widget.broadcaster?.streamOn(widget.property.channel!)?.listen((event) {
+      // Exit when already activated.
+      if (_activate) return;
+
+      // Update the value.
+      setState(() {
+        _setRateOffset(event);
+        _setRateDelta(0, broadcast: false);
+      });
+    });
+  }
+
   @override
   void initState() {
-    // Initialize members with the widget.
-    _prop = widget.property ?? ConsoleSliderWidgetProperty();
-    _rateOffset = ((_prop.initialValue - _prop.minValue) /
-            (_prop.maxValue - _prop.minValue))
-        .clamp(0, 1);
-    _channel = widget.availableChannels
-        ?.where((chan) => chan.identifier == _prop.channel)
-        .firstOrNull;
+    _initState();
 
-    // Add a lister for the broadcasting.
-    if (_channel != null) {
-      _subscription?.cancel();
-
-      _subscription = widget.broadcaster?.streamOn(_channel!)?.listen((event) {
-        // Exit when already activated.
-        if (_activate) return;
-
-        // Update the value.
-        if (mounted) {
-          setState(() {
-            _rateOffset =
-                ((event - _prop.minValue) / (_prop.maxValue - _prop.minValue))
-                    .clamp(0, 1);
-            _rateDelta = 0;
-          });
-        }
-      });
-    }
+    _initBroadcastListening();
 
     super.initState();
   }
@@ -95,46 +105,27 @@ class _ConsoleSliderWidgetState extends State<ConsoleSliderWidget> {
   @override
   void didUpdateWidget(covariant ConsoleSliderWidget oldWidget) {
     if (widget.property != oldWidget.property) {
-      // Initialize members with the widget.
-      _prop = widget.property ?? ConsoleSliderWidgetProperty();
-      _rateOffset = ((_prop.initialValue - _prop.minValue) /
-              (_prop.maxValue - _prop.minValue))
-          .clamp(0, 1);
-      _channel = widget.availableChannels
-          ?.where((chan) => chan.identifier == _prop.channel)
-          .firstOrNull;
+      _initState();
     }
 
     if (widget.broadcaster != oldWidget.broadcaster ||
-        widget.property?.channel != oldWidget.property?.channel) {
-      // Add a lister for the broadcasting.
-      if (_channel != null) {
-        _subscription?.cancel();
-
-        _subscription =
-            widget.broadcaster?.streamOn(_channel!)?.listen((event) {
-          // Exit when already activated.
-          if (_activate) return;
-
-          // Update the value.
-          if (mounted) {
-            setState(() {
-              _rateOffset =
-                  ((event - _prop.minValue) / (_prop.maxValue - _prop.minValue))
-                      .clamp(0, 1);
-              _rateDelta = 0;
-            });
-          }
-        });
-      }
+        widget.property.channel != oldWidget.property.channel) {
+      _initBroadcastListening();
     }
 
     super.didUpdateWidget(oldWidget);
   }
 
   @override
+  void dispose() {
+    _subscription?.cancel();
+
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final paramError = _prop.validate();
+    final paramError = widget.property.validate();
     if (paramError != null) {
       return ConsoleErrorWidgetCreator.createWith(
           brief: "Parameter Error", detail: paramError);
