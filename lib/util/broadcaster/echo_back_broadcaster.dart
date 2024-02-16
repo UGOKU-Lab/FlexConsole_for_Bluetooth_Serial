@@ -27,21 +27,51 @@ class EchoBackData {
 }
 
 class EchoBackBroadcaster implements MultiChannelBroadcaster {
-  late final _root = StreamController<_EchoBackRawData>.broadcast();
-  late final Map<String, _TwoWayStreamController> _branches = {};
+  final List<EchoBackChannel> channels;
+
+  final _root = StreamController<_EchoBackRawData>.broadcast();
+  final Map<String, _TwoWayStreamController> _branches = {};
+  final Map<EchoBackChannel, double> _dataMap = {};
+
+  EchoBackBroadcaster(this.channels);
 
   @override
-  Stream<double>? streamOn(BroadcastChannel channel) {
-    if (channel is! EchoBackChannel) return null;
+  Stream<double>? streamOn(String channelId) {
+    final channel = _getChannel(channelId);
+
+    if (channel == null) {
+      return null;
+    }
 
     return _getBranch(channel)?.downward.stream;
   }
 
   @override
-  Sink<double>? sinkOn(BroadcastChannel channel) {
-    if (channel is! EchoBackChannel) return null;
+  Sink<double>? sinkOn(String channelId) {
+    final channel = _getChannel(channelId);
+
+    if (channel == null) {
+      return null;
+    }
 
     return _getBranch(channel)?.upward.sink;
+  }
+
+  @override
+  double? read(String channelId) {
+    final channel = _getChannel(channelId);
+
+    if (channel == null) {
+      return null;
+    }
+
+    return _dataMap[channel];
+  }
+
+  EchoBackChannel? _getChannel(String channelId) {
+    return channels
+        .where((channel) => channel.identifier == channelId)
+        .firstOrNull;
   }
 
   _TwoWayStreamController? _getBranch(EchoBackChannel channel) {
@@ -50,14 +80,13 @@ class EchoBackBroadcaster implements MultiChannelBroadcaster {
       final downward = StreamController<double>.broadcast();
 
       // Distribute data to the branch by the channel.
-      _root.stream.listen((event) {
-        if (event.channel == channel.value) {
-          downward.sink.add(event.value);
-        }
-      });
+      _root.stream
+          .where((event) => event.channelId == channel.identifier)
+          .listen((event) => downward.sink.add(event.value));
 
       // Pass data to the root with the channel.
       upward.stream.listen((event) {
+        _dataMap[channel] = event;
         _root.sink.add(_EchoBackRawData(channel.value, event));
       });
 
@@ -75,8 +104,8 @@ typedef _TwoWayStreamController = ({
 
 @immutable
 class _EchoBackRawData {
-  final String channel;
+  final String channelId;
   final dynamic value;
 
-  const _EchoBackRawData(this.channel, this.value);
+  const _EchoBackRawData(this.channelId, this.value);
 }

@@ -27,47 +27,58 @@ class SppStateChannel implements BroadcastChannel {
 }
 
 class SppStateBroadcaster implements MultiChannelBroadcaster {
-  final Stream<Uint8List>? inputStream;
-  final Sink<Uint8List>? outputSink;
+  /// Available channels.
+  final List<SppStateChannel> channels;
 
-  late Timer _timer;
-  final _sendDataMap = <SppStateChannel, int>{};
+  /// Output sink of SPP communication.
+  final Sink<Uint8List>? outputSink;
 
   /// The stream that translate the binary data from the [inputStream] and
   /// [outputSink] to the [_ValueOnChannel], then broadcasts to the branches.
-  late final _root = StreamController<_ValueOnChannel>.broadcast();
+  final _root = StreamController<_ValueOnChannel>.broadcast();
 
   /// The branches of root streams.
-  late final _branches =
+  final _branches =
       <SppStateChannel, _TwoWayStreamController<double, double>>{};
 
-  final _buffer = <int>[];
+  late Timer _periodicSendTimer;
+  final _sendDataMap = <SppStateChannel, int>{};
+  final _receiveBuffer = <int>[];
+  final _dataMap = <SppStateChannel, int>{};
+  final _channelCache = <String, SppStateChannel?>{};
 
   /// Creates a broadcaster using [inputStream] and [outputSink].
-  SppStateBroadcaster({this.inputStream, this.outputSink}) {
+  SppStateBroadcaster(
+    this.channels, {
+    Stream<Uint8List>? inputStream,
+    this.outputSink,
+  }) {
     // Add a listener for the SPP input stream.
-    inputStream?.listen((data) {
-      _buffer.addAll(data);
-
-      while (_buffer.length >= 3) {
-        final sppData = _ValueOnChannel.fromIntList(_buffer);
-
-        if (sppData != null) {
-          // Push the data to the downward branches.
-          _root.sink.add(sppData);
-          _buffer.removeRange(0, 3);
-        } else {
-          // Discard first byte and go next.
-          _buffer.removeAt(0);
-        }
-      }
-    });
+    inputStream?.listen(_distribute);
 
     // Set the timer for the first call.
-    _timer = Timer(const Duration(milliseconds: 100), _periodicWrite);
+    _periodicSendTimer =
+        Timer(const Duration(milliseconds: 100), _periodicSend);
   }
 
-  void _periodicWrite() {
+  void _distribute(data) {
+    _receiveBuffer.addAll(data);
+
+    while (_receiveBuffer.length >= 3) {
+      final sppData = _ValueOnChannel.fromIntList(_receiveBuffer);
+
+      if (sppData != null) {
+        // Push the data to the downward branches.
+        _root.sink.add(sppData);
+        _receiveBuffer.removeRange(0, 3);
+      } else {
+        // Discard first byte and go next.
+        _receiveBuffer.removeAt(0);
+      }
+    }
+  }
+
+  void _periodicSend() {
     for (final entry in _sendDataMap.entries) {
       final channel = entry.key.value;
       final value = entry.value;
@@ -78,27 +89,56 @@ class SppStateBroadcaster implements MultiChannelBroadcaster {
 
     _sendDataMap.clear();
 
-    _timer = Timer(const Duration(milliseconds: 100), _periodicWrite);
+    _periodicSendTimer =
+        Timer(const Duration(milliseconds: 100), _periodicSend);
   }
 
   void dispose() {
-    _timer.cancel();
+    _periodicSendTimer.cancel();
   }
 
-  /// Gets the stream on the [channel].
   @override
-  Stream<double>? streamOn(BroadcastChannel channel) {
-    if (channel is! SppStateChannel) return null;
+  Stream<double>? streamOn(String channelId) {
+    final channel = _getChannel(channelId);
+
+    if (channel == null) {
+      return null;
+    }
 
     return _getBranch(channel)?.downward.stream;
   }
 
   /// Gets the sink on the [channel].
   @override
-  Sink<double>? sinkOn(BroadcastChannel channel) {
-    if (channel is! SppStateChannel) return null;
+  Sink<double>? sinkOn(String channelId) {
+    final channel = _getChannel(channelId);
+
+    if (channel == null) {
+      return null;
+    }
 
     return _getBranch(channel)?.upward.sink;
+  }
+
+  @override
+  double? read(String channelId) {
+    final channel = _getChannel(channelId);
+
+    if (channel == null) {
+      return null;
+    }
+
+    return _dataMap[channel]?.toDouble();
+  }
+
+  SppStateChannel? _getChannel(String channelId) {
+    if (_channelCache[channelId] == null) {
+      _channelCache[channelId] = channels
+          .where((channel) => channel.identifier == channelId)
+          .firstOrNull;
+    }
+
+    return _channelCache[channelId];
   }
 
   _TwoWayStreamController<double, double>? _getBranch(SppStateChannel channel) {
@@ -107,10 +147,13 @@ class SppStateBroadcaster implements MultiChannelBroadcaster {
       final downward = StreamController<double>.broadcast();
 
       // Broadcast data to the branch by the channel.
-      _root.stream.listen((event) {
-        if (event.channel == channel.value) {
-          downward.sink.add(event.value.toDouble());
-        }
+      _root.stream
+          .where((event) => event.channel == channel.value)
+          .listen((event) {
+        downward.sink.add(event.value.toDouble());
+
+        // Store the data to the map.
+        _dataMap[channel] = event.value;
       });
 
       // Pass data to the root with the channel.
@@ -122,6 +165,7 @@ class SppStateBroadcaster implements MultiChannelBroadcaster {
 
         // Store the data to the map.
         _sendDataMap[channel] = value;
+        _dataMap[channel] = value;
       });
 
       _branches[channel] = (upward: upward, downward: downward);
