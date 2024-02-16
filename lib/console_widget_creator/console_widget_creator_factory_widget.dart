@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flex_console_for_bluetooth_serial/console_widget_creator/control_widgets/connector_widget/console_connector_widget_creator.dart';
 import 'package:flutter/material.dart';
 import 'package:flex_console_for_bluetooth_serial/console_widget_creator/control_widgets/adjuster_widget/console_adjuster_widget_creator.dart';
 import 'package:flex_console_for_bluetooth_serial/console_widget_creator/control_widgets/joystick_widget/console_joystick_widget_creator.dart';
@@ -33,6 +34,7 @@ class ConsoleCreatorFactoryWidget extends StatelessWidget {
     consoleSliderWidgetCreator,
     consoleJoystickWidgetCreator,
     consoleAdjusterWidgetCreator,
+    consoleConnectorWidgetCreator,
     // Monitor widgets.
     consoleValueMonitorWidgetCreator,
     consoleLineChartWidgetCreator,
