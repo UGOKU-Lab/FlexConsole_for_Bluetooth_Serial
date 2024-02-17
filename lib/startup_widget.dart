@@ -43,7 +43,8 @@ class StartupWidget extends StatelessWidget {
                           ' Serial.\n'
                           'This offers the following features:\n'
                           '\n'
-                          '- device discovering\n'
+                          '- new widget "connector"\n'
+                          '- retain state when changing display\n'
                           '\n'
                           'For more information, search on GitHub.'
                 },
