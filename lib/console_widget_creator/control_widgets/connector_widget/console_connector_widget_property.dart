@@ -70,13 +70,29 @@ class ConsoleConnectorWidgetProperty extends TypedConsoleWidgetProperty {
               Text("Output Channel",
                   style: Theme.of(context).textTheme.headlineMedium),
               ChannelSelector(
-                  labelText: "Source",
-                  initialValue: newChannelSrc,
-                  onChanged: (value) => newChannelSrc = value),
+                labelText: "Source",
+                initialValue: newChannelSrc,
+                onChanged: (value) => newChannelSrc = value,
+                validator: (src) {
+                  if (src != null && src == newChannelDst) {
+                    return "Source and destination must be different.";
+                  }
+
+                  return null;
+                },
+              ),
               ChannelSelector(
-                  labelText: "Destination",
-                  initialValue: newChannelDst,
-                  onChanged: (value) => newChannelDst = value),
+                labelText: "Destination",
+                initialValue: newChannelDst,
+                onChanged: (value) => newChannelDst = value,
+                validator: (dst) {
+                  if (dst != null && dst == newChannelSrc) {
+                    return "Source and destination must be different.";
+                  }
+
+                  return null;
+                },
+              ),
             ],
           ),
         ),
