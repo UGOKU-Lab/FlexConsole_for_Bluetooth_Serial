@@ -67,10 +67,9 @@ class ConsoleConnectorWidgetProperty extends TypedConsoleWidgetProperty {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(""),
-              Text("Output Channel",
+              Text("Source Channel",
                   style: Theme.of(context).textTheme.headlineMedium),
               ChannelSelector(
-                labelText: "Source",
                 initialValue: newChannelSrc,
                 onChanged: (value) => newChannelSrc = value,
                 validator: (src) {
@@ -81,8 +80,10 @@ class ConsoleConnectorWidgetProperty extends TypedConsoleWidgetProperty {
                   return null;
                 },
               ),
+              const Text(""),
+              Text("Destination Channel",
+                  style: Theme.of(context).textTheme.headlineMedium),
               ChannelSelector(
-                labelText: "Destination",
                 initialValue: newChannelDst,
                 onChanged: (value) => newChannelDst = value,
                 validator: (dst) {
