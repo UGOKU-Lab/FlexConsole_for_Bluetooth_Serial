@@ -7,12 +7,14 @@ class ChannelSelector extends ConsumerWidget {
   final String? labelText;
   final String? initialValue;
   final void Function(String?)? onChanged;
+  final String? Function(String?)? validator;
 
   const ChannelSelector({
     super.key,
     this.labelText,
     this.initialValue,
     this.onChanged,
+    this.validator,
   });
 
   @override
@@ -29,11 +31,12 @@ class ChannelSelector extends ConsumerWidget {
     // Return the stated dropdown button; the state makes the button can display
     // the selected option.
     return StatefulBuilder(
-      builder: (context, setState) => DropdownButtonFormField(
+      builder: (context, setState) => DropdownButtonFormField<String>(
         decoration: InputDecoration(labelText: labelText),
         itemHeight: null,
         isExpanded: true,
         value: channel,
+        validator: validator,
         selectedItemBuilder: (context) => [
           Container(
               height: kMinInteractiveDimension,

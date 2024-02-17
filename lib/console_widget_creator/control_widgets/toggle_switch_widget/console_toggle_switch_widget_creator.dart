@@ -1,5 +1,5 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flex_console_for_bluetooth_serial/broadcaster_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flex_console_for_bluetooth_serial/console_widget_creator/control_widgets/toggle_switch_widget/console_toggle_switch_widget.dart';
 import 'package:flex_console_for_bluetooth_serial/console_widget_creator/control_widgets/toggle_switch_widget/console_toggle_switch_widget_property.dart';
 import 'package:flex_console_for_bluetooth_serial/console_widget_creator/typed_console_widget_creator.dart';
@@ -14,7 +14,6 @@ final consoleToggleSwitchWidgetCreator = TypedConsoleWidgetCreator(
     builder: (context, ref, _) => ConsoleToggleSwitchWidget(
       property: property,
       broadcaster: ref.watch(broadcasterProvider),
-      availableChannels: ref.watch(availableChannelProvider).toList(),
     ),
   ),
   previewBuilder: (context, property) => ConsoleToggleSwitchWidget(

@@ -14,9 +14,6 @@ class ConsoleValueMonitorWidget extends StatefulWidget {
   /// The target broadcaster.
   final MultiChannelBroadcaster? broadcaster;
 
-  /// The available channels on the broadcaster.
-  final List<BroadcastChannel>? availableChannels;
-
   /// The initial value to display on preview and sample.
   final double? initialValue;
 
@@ -24,7 +21,6 @@ class ConsoleValueMonitorWidget extends StatefulWidget {
     super.key,
     required this.property,
     this.broadcaster,
-    this.availableChannels,
     this.initialValue,
   });
 
@@ -40,25 +36,24 @@ class _ConsoleValueMonitorWidgetState extends State<ConsoleValueMonitorWidget> {
   /// Whether the display value should not update.
   bool _pausing = false;
 
-  /// The target broadcasting channel.
-  BroadcastChannel? _channel;
-
   /// The subscription for the targe channel.
   StreamSubscription? _subscription;
 
   /// Updates the subscription.
-  void _updateSubscription() {
+  void _initBroadcastListening() {
     // Cancel the subscription anyway.
     _subscription?.cancel();
+    _subscription = null;
+
+    if (widget.property.channel == null) {
+      return;
+    }
 
     // Subscribe if required.
-    if (_channel != null) {
-      _subscription = widget.broadcaster?.streamOn(_channel!)?.listen((event) {
-        if (mounted) {
-          _setValue(event);
-        }
-      });
-    }
+    _subscription =
+        widget.broadcaster?.streamOn(widget.property.channel!)?.listen((event) {
+      _setValue(event);
+    });
   }
 
   /// Sets the state [_value] to [value].
@@ -81,33 +76,28 @@ class _ConsoleValueMonitorWidgetState extends State<ConsoleValueMonitorWidget> {
 
   @override
   void initState() {
-    // Initialize the channel to listen.
-    _channel = widget.availableChannels
-        ?.where((chan) => chan.identifier == widget.property.channel)
-        .firstOrNull;
-
     // Manage the lister for the broadcasting.
-    _updateSubscription();
+    _initBroadcastListening();
 
     super.initState();
   }
 
   @override
   void didUpdateWidget(covariant ConsoleValueMonitorWidget oldWidget) {
-    // Update the channel to listen.
-    if (widget.property != oldWidget.property) {
-      _channel = widget.availableChannels
-          ?.where((chan) => chan.identifier == widget.property.channel)
-          .firstOrNull;
-    }
-
     // Manage the lister for the broadcasting.
     if (widget.broadcaster != oldWidget.broadcaster ||
         widget.property.channel != oldWidget.property.channel) {
-      _updateSubscription();
+      _initBroadcastListening();
     }
 
     super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+
+    super.dispose();
   }
 
   @override

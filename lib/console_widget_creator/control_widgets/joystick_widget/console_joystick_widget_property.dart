@@ -28,6 +28,12 @@ class ConsoleJoystickWidgetProperty extends TypedConsoleWidgetProperty {
   /// The max value of the output Y.
   final double maxValueY;
 
+  /// The width of the range of value x.
+  double get valueWidthX => maxValueX - minValueX;
+
+  /// The width of the range of value y.
+  double get valueWidthY => maxValueY - minValueY;
+
   /// Creates the parameter.
   ConsoleJoystickWidgetProperty(
       {this.channelX,

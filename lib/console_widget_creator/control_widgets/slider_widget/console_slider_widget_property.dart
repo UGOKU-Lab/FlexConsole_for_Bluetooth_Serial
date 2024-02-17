@@ -22,6 +22,9 @@ class ConsoleSliderWidgetProperty extends TypedConsoleWidgetProperty {
   /// The initial value of the output.
   final double initialValue;
 
+  /// The width of the value range.
+  double get valueWidth => maxValue - minValue;
+
   /// Creates the parameter.
   ConsoleSliderWidgetProperty({
     this.channel,

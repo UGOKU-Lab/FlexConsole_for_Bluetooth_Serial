@@ -14,14 +14,10 @@ class ConsoleAdjusterWidget extends StatefulWidget {
   /// The target broadcaster.
   final MultiChannelBroadcaster? broadcaster;
 
-  /// The available channels on the broadcaster.
-  final List<BroadcastChannel>? availableChannels;
-
   const ConsoleAdjusterWidget({
     super.key,
     required this.property,
     this.broadcaster,
-    this.availableChannels,
   });
 
   @override
@@ -38,9 +34,6 @@ class _ConsoleAdjusterWidgetState extends State<ConsoleAdjusterWidget> {
   /// Whether the widget is activated.
   bool _activate = false;
 
-  /// The target broadcasting channel.
-  BroadcastChannel? _channel;
-
   /// The subscription for the targe channel.
   StreamSubscription? _subscription;
 
@@ -56,27 +49,29 @@ class _ConsoleAdjusterWidgetState extends State<ConsoleAdjusterWidget> {
   }
 
   /// Updates members with widget.
-  void _updateWithWidget() {
-    // Update the step size.
+  void _initState() {
     _stepSize = ((widget.property.maxValue - widget.property.minValue) /
         widget.property.divisions);
 
-    // Reset the step to the initial value.
-    _setStep(_valueToStep(widget.property.initialValue), broadcast: true);
+    final latestValue = widget.property.channel != null
+        ? widget.broadcaster?.read(widget.property.channel!)
+        : null;
 
-    _channel = widget.availableChannels
-        ?.where((chan) => chan.identifier == widget.property.channel)
-        .firstOrNull;
+    _setStep(
+      _valueToStep(latestValue ?? widget.property.initialValue),
+      broadcast: latestValue == null,
+    );
   }
 
   /// Updates the subscription.
-  void _updateSubscription() {
-    // Cancel the subscription anyway.
+  void _initBroadcastListening() {
     _subscription?.cancel();
+    _subscription = null;
 
-    // Subscribe if required.
-    if (_channel != null) {
-      _subscription = widget.broadcaster?.streamOn(_channel!)?.listen((event) {
+    if (widget.property.channel != null) {
+      _subscription = widget.broadcaster
+          ?.streamOn(widget.property.channel!)
+          ?.listen((event) {
         // Exit when already activated.
         if (_activate) return;
 
@@ -107,8 +102,8 @@ class _ConsoleAdjusterWidgetState extends State<ConsoleAdjusterWidget> {
     if (_step != _prevStep) {
       _prevStep = _step;
 
-      if (broadcast && _channel != null) {
-        widget.broadcaster?.sinkOn(_channel!)?.add(_value);
+      if (broadcast && widget.property.channel != null) {
+        widget.broadcaster?.sinkOn(widget.property.channel!)?.add(_value);
       }
     }
   }
@@ -122,29 +117,32 @@ class _ConsoleAdjusterWidgetState extends State<ConsoleAdjusterWidget> {
 
   @override
   void initState() {
-    // Initialize members with the widget.
-    _updateWithWidget();
+    _initState();
 
-    // Manage the lister for the broadcasting.
-    _updateSubscription();
+    _initBroadcastListening();
 
     super.initState();
   }
 
   @override
   void didUpdateWidget(covariant ConsoleAdjusterWidget oldWidget) {
-    //  Update members with the new widget.
     if (widget.property != oldWidget.property) {
-      _updateWithWidget();
+      _initState();
     }
 
-    // Manage the lister for the broadcasting.
     if (widget.broadcaster != oldWidget.broadcaster ||
         widget.property.channel != oldWidget.property.channel) {
-      _updateSubscription();
+      _initBroadcastListening();
     }
 
     super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+
+    super.dispose();
   }
 
   @override

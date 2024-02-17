@@ -16,7 +16,6 @@ final consoleLineChartWidgetCreator = TypedConsoleWidgetCreator(
     builder: (context, ref, _) => ConsoleLineChartWidget(
       property: property,
       broadcaster: ref.watch(broadcasterProvider),
-      availableChannels: ref.watch(availableChannelProvider).toList(),
     ),
   ),
   previewBuilder: (context, property) => ConsoleLineChartWidget(

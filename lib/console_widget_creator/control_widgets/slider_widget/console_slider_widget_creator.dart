@@ -14,7 +14,6 @@ final consoleSliderWidgetCreator = TypedConsoleWidgetCreator(
     builder: (context, ref, _) => ConsoleSliderWidget(
       property: property,
       broadcaster: ref.watch(broadcasterProvider),
-      availableChannels: ref.watch(availableChannelProvider).toList(),
     ),
   ),
   propertyCreator: ConsoleSliderWidgetProperty.edit,

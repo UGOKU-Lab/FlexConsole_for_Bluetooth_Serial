@@ -8,15 +8,20 @@ import 'package:flex_console_for_bluetooth_serial/bluetooth/target_device_provid
 
 SppStateBroadcaster? _broadcaster;
 
+final sppStateChannelProvider = Provider<Iterable<SppStateChannel>>((ref) {
+  return List.generate(256, (index) => SppStateChannel(index));
+});
+
 /// Provides a broadcaster.
-final sspStateBroadcasterProvider = Provider<SppStateBroadcaster>((ref) {
+final sppStateBroadcasterProvider = Provider<SppStateBroadcaster>((ref) {
+  final channels = ref.watch(sppStateChannelProvider).toList();
   final connection = ref.watch(connectionProvider);
   final device = ref.watch(connectionTargetDeviceProvider);
 
   _broadcaster?.dispose();
 
   _broadcaster = connection.when(
-    loading: () => SppStateBroadcaster(),
+    loading: () => SppStateBroadcaster(channels),
     data: (connection) {
       final inputStream = connection?.input?.asBroadcastStream();
 
@@ -28,7 +33,7 @@ final sspStateBroadcasterProvider = Provider<SppStateBroadcaster>((ref) {
         }
       });
 
-      // Agent the output sink with the connection status of the device.
+      // The output sink with the connection status of the device.
       final outputStreamController = StreamController<Uint8List>();
 
       outputStreamController.stream.listen((event) {
@@ -39,11 +44,12 @@ final sspStateBroadcasterProvider = Provider<SppStateBroadcaster>((ref) {
 
       // Combine input and output streams.
       return SppStateBroadcaster(
+        channels,
         inputStream: inputStream,
         outputSink: outputStreamController.sink,
       );
     },
-    error: (error, trace) => SppStateBroadcaster(),
+    error: (error, trace) => SppStateBroadcaster(channels),
   );
 
   return _broadcaster!;

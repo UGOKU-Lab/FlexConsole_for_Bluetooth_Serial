@@ -18,7 +18,12 @@ abstract class BroadcastChannel {
 }
 
 abstract class MultiChannelBroadcaster {
-  Stream<double>? streamOn(BroadcastChannel channel);
+  /// Gets the stream of the [channelId].
+  Stream<double>? streamOn(String channelId);
 
-  Sink<double>? sinkOn(BroadcastChannel channel);
+  /// Gets the sink of the [channelId].
+  Sink<double>? sinkOn(String channelId);
+
+  /// Reads the latest value of the [channelId].
+  double? read(String channelId);
 }

@@ -11,13 +11,11 @@ import 'package:flex_console_for_bluetooth_serial/util/broadcaster/multi_channel
 class ConsoleJoystickWidget extends StatefulWidget {
   final ConsoleJoystickWidgetProperty property;
   final MultiChannelBroadcaster? broadcaster;
-  final List<BroadcastChannel>? availableChannels;
 
   const ConsoleJoystickWidget({
     super.key,
     required this.property,
     this.broadcaster,
-    this.availableChannels,
   });
 
   @override
@@ -25,7 +23,6 @@ class ConsoleJoystickWidget extends StatefulWidget {
 }
 
 class _ConsoleJoystickWidgetState extends State<ConsoleJoystickWidget> {
-  late ConsoleJoystickWidgetProperty _prop;
   bool _activate = false;
 
   late double _rateX;
@@ -33,107 +30,106 @@ class _ConsoleJoystickWidgetState extends State<ConsoleJoystickWidget> {
 
   double? _prevValueX;
   double? _prevValueY;
-  BroadcastChannel? _channelX;
-  BroadcastChannel? _channelY;
   StreamSubscription? _subscriptionX;
   StreamSubscription? _subscriptionY;
 
-  static double _getSquareSize(BoxConstraints constraints) =>
-      min(constraints.maxHeight, constraints.maxWidth);
-
-  /// Sets the  value and adds the value to the sink.
-  void _setRate(double rateX, double rateY) {
+  /// Sets the value and adds the value to the sink.
+  void _setRate(double rateX, double rateY, {bool broadcast = true}) {
     setState(() {
-      _rateX = (rateX + 0.5).clamp(0, 1);
-      _rateY = (rateY + 0.5).clamp(0, 1);
+      _rateX = rateX.clamp(0, 1);
+      _rateY = rateY.clamp(0, 1);
     });
 
     final valueX =
-        (_rateX * (_prop.maxValueX - _prop.minValueX) + _prop.minValueX)
+        (_rateX * widget.property.valueWidthX + widget.property.minValueX)
             .floorToDouble();
 
     final valueY =
-        (_rateY * (_prop.maxValueY - _prop.minValueY) + _prop.minValueY)
+        (_rateY * widget.property.valueWidthY + widget.property.minValueY)
             .floorToDouble();
 
-    if (_channelX != null && _prevValueX != valueX) {
-      widget.broadcaster?.sinkOn(_channelX!)?.add(valueX);
-    }
+    if (broadcast) {
+      if (widget.property.channelX != null && _prevValueX != valueX) {
+        widget.broadcaster?.sinkOn(widget.property.channelX!)?.add(valueX);
+      }
 
-    if (_channelY != null && _prevValueY != _rateY) {
-      widget.broadcaster?.sinkOn(_channelY!)?.add(valueY);
+      if (widget.property.channelY != null && _prevValueY != _rateY) {
+        widget.broadcaster?.sinkOn(widget.property.channelY!)?.add(valueY);
+      }
     }
 
     _prevValueX = valueX;
     _prevValueY = valueY;
   }
 
-  void _initializeWithWidget() {
-    // Set the parameter.
-    _prop = widget.property;
+  void _initState() {
+    final valueX = widget.property.channelX != null
+        ? widget.broadcaster?.read(widget.property.channelX!)
+        : null;
+
+    final valueY = widget.property.channelY != null
+        ? widget.broadcaster?.read(widget.property.channelY!)
+        : null;
+
+    final rateX = valueX != null
+        ? (valueX - widget.property.minValueX) / widget.property.valueWidthX
+        : 0.5;
+
+    final rateY = valueY != null
+        ? (valueY - widget.property.minValueY) / widget.property.valueWidthY
+        : 0.5;
 
     // Set the values.
-    _rateX = 0.5;
-    _rateY = 0.5;
-
-    // Set the channels.
-    _channelX = widget.availableChannels
-        ?.where((chan) => chan.identifier == _prop.channelX)
-        .firstOrNull;
-    _channelY = widget.availableChannels
-        ?.where((chan) => chan.identifier == _prop.channelY)
-        .firstOrNull;
+    _setRate(rateX, rateY, broadcast: valueX == null || valueY == null);
   }
 
-  void _updateBroadcastListener() {
-    // For dim x.
-    if (_channelX != null) {
-      _subscriptionX?.cancel();
+  void _initBroadcastListening() {
+    _subscriptionX?.cancel();
+    _subscriptionX = null;
 
-      _subscriptionX =
-          widget.broadcaster?.streamOn(_channelX!)?.listen((event) {
+    _subscriptionY?.cancel();
+    _subscriptionY = null;
+
+    // For dim x.
+    if (widget.property.channelX != null) {
+      _subscriptionX = widget.broadcaster
+          ?.streamOn(widget.property.channelX!)
+          ?.listen((event) {
         // Exit when already activated.
         if (_activate) return;
 
         // Update the value.
-        if (mounted) {
-          setState(() {
-            _rateX = ((event - _prop.minValueX) /
-                    (_prop.maxValueX - _prop.minValueX))
-                .clamp(0, 1);
-          });
-        }
+        setState(() {
+          _rateX = ((event - widget.property.minValueX) /
+                  widget.property.valueWidthX)
+              .clamp(0, 1);
+        });
       });
     }
 
     // For dim y.
-    if (_channelY != null) {
-      _subscriptionY?.cancel();
-
-      _subscriptionY =
-          widget.broadcaster?.streamOn(_channelY!)?.listen((event) {
+    if (widget.property.channelY != null) {
+      _subscriptionY = widget.broadcaster
+          ?.streamOn(widget.property.channelY!)
+          ?.listen((event) {
         // Exit when already activated.
         if (_activate) return;
 
         // Update the value.
-        if (mounted) {
-          setState(() {
-            _rateY = ((event - _prop.minValueY) /
-                    (_prop.maxValueY - _prop.minValueY))
-                .clamp(0, 1);
-          });
-        }
+        setState(() {
+          _rateY = ((event - widget.property.minValueY) /
+                  widget.property.valueWidthY)
+              .clamp(0, 1);
+        });
       });
     }
   }
 
   @override
   void initState() {
-    // Initialize members with the widget.
-    _initializeWithWidget();
+    _initState();
 
-    // Add a lister for the broadcasting.
-    _updateBroadcastListener();
+    _initBroadcastListening();
 
     super.initState();
   }
@@ -142,22 +138,30 @@ class _ConsoleJoystickWidgetState extends State<ConsoleJoystickWidget> {
   void didUpdateWidget(covariant ConsoleJoystickWidget oldWidget) {
     // Initialize members with the widget if required.
     if (widget.property != oldWidget.property) {
-      _initializeWithWidget();
+      _initState();
     }
 
     // Add a lister for the broadcasting if required.
     if (widget.broadcaster != oldWidget.broadcaster ||
         widget.property.channelX != oldWidget.property.channelX ||
         widget.property.channelY != oldWidget.property.channelY) {
-      _updateBroadcastListener();
+      _initBroadcastListening();
     }
 
     super.didUpdateWidget(oldWidget);
   }
 
   @override
+  void dispose() {
+    _subscriptionX?.cancel();
+    _subscriptionY?.cancel();
+
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final paramError = _prop.validate();
+    final paramError = widget.property.validate();
 
     if (paramError != null) {
       return ConsoleErrorWidgetCreator.createWith(
@@ -195,12 +199,17 @@ class _ConsoleJoystickWidgetState extends State<ConsoleJoystickWidget> {
           // Gesture handle.
           HandleWidget(
             onValueChange: (dx, dy) => _setRate(
-                dx / constraints.maxWidth, -dy / constraints.maxHeight),
-            onValueFix: () => _setRate(0, 0),
+              dx / constraints.maxWidth + 0.5,
+              -dy / constraints.maxHeight + 0.5,
+            ),
+            onValueFix: () => _setRate(0.5, 0.5),
             onActivationChange: (act) => setState(() => _activate = act),
           ),
         ]),
       ),
     );
   }
+
+  static double _getSquareSize(BoxConstraints constraints) =>
+      min(constraints.maxHeight, constraints.maxWidth);
 }

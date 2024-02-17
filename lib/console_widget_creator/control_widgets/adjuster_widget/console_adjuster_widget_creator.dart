@@ -16,7 +16,6 @@ final consoleAdjusterWidgetCreator = TypedConsoleWidgetCreator(
     builder: (context, ref, _) => ConsoleAdjusterWidget(
       property: property,
       broadcaster: ref.watch(broadcasterProvider),
-      availableChannels: ref.watch(availableChannelProvider).toList(),
     ),
   ),
   previewBuilder: (context, property) => ConsoleAdjusterWidget(
