@@ -53,7 +53,7 @@ class _ConsoleJoystickWidgetState extends State<ConsoleJoystickWidget> {
         widget.broadcaster?.sinkOn(widget.property.channelX!)?.add(valueX);
       }
 
-      if (widget.property.channelY != null && _prevValueY != _rateY) {
+      if (widget.property.channelY != null && _prevValueY != valueY) {
         widget.broadcaster?.sinkOn(widget.property.channelY!)?.add(valueY);
       }
     }
