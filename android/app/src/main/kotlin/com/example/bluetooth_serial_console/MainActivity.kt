@@ -1,4 +1,4 @@
-package com.example.flex_console_for_bluetooth_serial
+package com.ugoku_lab.flex_console_for_bluetooth_serial
 
 import io.flutter.embedding.android.FlutterActivity
 
