@@ -10,7 +10,7 @@ Bluetooth ClassicのSPPプロファイルを使用しています。
 
 ## 使用方法
 ### インストール方法
-[releaseページ](https://github.com/UGOKU-Lab/FlexConsole_for_Bluetooth_Serial/releases/tag/v0.2.0-alpha)からAndroidで実行可能なapkファイルをダウンロードできます。
+[releaseページ](https://github.com/UGOKU-Lab/FlexConsole_for_Bluetooth_Serial/releases/)から最新版を選択しAndroidで実行可能なapkファイルをダウンロードできます。
 
 ### マイコン側プログラム
 ESP32で実行可能なArduinoのサンプルコードを公開しています。  
